@@ -3,24 +3,24 @@ from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 from pptx.enum.shapes import MSO_SHAPE
-import copy
+import os
 
 # === Цветовая палитра ===
 COLOR_BG_DARK = RGBColor(0x0D, 0x18, 0x2D)
 COLOR_BG_LIGHT = RGBColor(0xF0, 0xF3, 0xF9)
 COLOR_ACCENT_BLUE = RGBColor(0x27, 0x7F, 0xD6)
-COLOR_WHITE = RGBColor(0xFF, 0xFF, 0xFF)
-COLOR_GRAY_TEXT = RGBColor(0x55, 0x5B, 0x62)
-COLOR_TITLE_TEXT = RGBColor(0x1C, 0x2A, 0x45)
 COLOR_RED = RGBColor(0xE5, 0x3D, 0x3D)
 COLOR_ORANGE = RGBColor(0xF4, 0xA2, 0x2A)
 COLOR_GREEN = RGBColor(0x3A, 0x85, 0x53)
+COLOR_WHITE = RGBColor(0xFF, 0xFF, 0xFF)
+COLOR_GRAY_TEXT = RGBColor(0x55, 0x5B, 0x62)
+COLOR_TITLE_TEXT = RGBColor(0x1C, 0x2A, 0x45)
 
 prs = Presentation()
 prs.slide_width = Inches(13.333)
 prs.slide_height = Inches(7.5)
 
-# === Вспомогательные функции =
+# === Вспомогательные функции ===
 def set_bg(slide, color):
     fill = slide.background.fill
     fill.solid()
@@ -141,7 +141,7 @@ def create_slide_4():
     total = add_shape(slide, Inches(1.5), y_offset + 5 * Inches(0.85), Inches(10.0), Inches(0.8), COLOR_ACCENT_BLUE)
     add_text_to_shape(total, "ИТОГО: 88.4 млрд руб./год (∑ всех сервисов)", 16, bold=True, color=COLOR_WHITE)
 
-# === СЛАЙД 5 (Конкуренты) ===
+# === СЛАЙД 5 (Конкурентный анализ) ===
 def create_slide_5():
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_bg(slide, COLOR_BG_LIGHT)
@@ -200,18 +200,13 @@ def create_slide_8():
     waves = [
         ("Wave 1 (0-3 мес.)", "MVP", "Заметки + Задачи (виджет в чате)", COLOR_ACCENT_BLUE),
         ("Wave 2 (3-6 мес.)", "Расширение", "Календарь + VK Звонки", COLOR_ORANGE),
-        ("Wave 3 (6-12 мес.)", "Масштабирование", "Облако + Почта (фоново)", RGBColor(0x3A, 0x85, 0x53))
+        ("Wave 3 (6-12 мес.)", "Масштабирование", "Облако + Почта (фоново)", COLOR_GREEN)
     ]
     
     y = Inches(2.0)
     for i, (wave, stage, description, color) in enumerate(waves):
-        # Полоса этапа
         bar = add_shape(slide, Inches(2.0), y + i * Inches(1.5), Inches(9.0), Inches(0.8), color)
         add_text_to_shape(bar, f"{wave}  •  {stage}\n{description}", 16, bold=True, color=COLOR_WHITE)
-        
-        # Стрелка между этапами
-        if i < 2:
-            arrow = add_shape(slide, Inches(6.0), y + i * Inches(1.5) + Inches(0.8), Inches(1.0), Inches(0.2), COLOR_ACCENT_BLUE) # Упрощенная стрелка
 
 # === СЛАЙД 9 (Риски и зависимости) ===
 def create_slide_9():
@@ -256,7 +251,7 @@ def create_slide_10():
     action = add_shape(slide, Inches(1.5), y + Inches(0.5), Inches(10.0), Inches(0.8), COLOR_ACCENT_BLUE)
     add_text_to_shape(action, "👉 Рекомендация: Немедленный старт MVP (Заметки+Задачи), запуск A/B теста на 50%", 16, bold=True, color=COLOR_WHITE)
 
-# === Сборка всех слайдов ===
+# === СБОРКА ===
 create_slide_1()
 create_slide_2()
 create_slide_3()
@@ -268,5 +263,7 @@ create_slide_8()
 create_slide_9()
 create_slide_10()
 
-prs.save("VK_Mail_Case_10_Slides.pptx")
-print("✅ Презентация создана: VK_Mail_Case_10_Slides.pptx")
+filename = "Интеграция_Mail_в_VK.pptx"
+prs.save(filename)
+print(f"✅ Презентация создана!\nФайл сохранён в текущей папке:\n{os.path.abspath(filename)}")
+print("\n👉 Теперь просто скачайте файл на компьютер (в Codespaces: правой кнопкой по файлу -> Download).")
