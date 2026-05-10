@@ -20,7 +20,7 @@ prs = Presentation()
 prs.slide_width = Inches(13.333)
 prs.slide_height = Inches(7.5)
 
-# === Вспомогательные функции ===
+# === Вспомогательные функции =
 def set_bg(slide, color):
     fill = slide.background.fill
     fill.solid()
