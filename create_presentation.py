@@ -1,224 +1,272 @@
 from pptx import Presentation
-from pptx.util import Inches, Pt, Emu
+from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
+from pptx.enum.shapes import MSO_SHAPE
 import copy
 
-# Цветовая палитра
-DARK_BLUE = RGBColor(0x1B, 0x3A, 0x5C)      # Тёмно-синий (заголовки, акценты)
-ACCENT_BLUE = RGBColor(0x2E, 0x86, 0xC1)    # Голубой
-LIGHT_BG = RGBColor(0xF0, 0xF4, 0xFA)       # Светло-голубой фон
-WHITE = RGBColor(0xFF, 0xFF, 0xFF)
-BLACK = RGBColor(0x00, 0x00, 0x00)
-DARK_GRAY = RGBColor(0x33, 0x33, 0x33)
+# === Цветовая палитра ===
+COLOR_BG_DARK = RGBColor(0x0D, 0x18, 0x2D)
+COLOR_BG_LIGHT = RGBColor(0xF0, 0xF3, 0xF9)
+COLOR_ACCENT_BLUE = RGBColor(0x27, 0x7F, 0xD6)
+COLOR_WHITE = RGBColor(0xFF, 0xFF, 0xFF)
+COLOR_GRAY_TEXT = RGBColor(0x55, 0x5B, 0x62)
+COLOR_TITLE_TEXT = RGBColor(0x1C, 0x2A, 0x45)
+COLOR_RED = RGBColor(0xE5, 0x3D, 0x3D)
+COLOR_ORANGE = RGBColor(0xF4, 0xA2, 0x2A)
+COLOR_GREEN = RGBColor(0x3A, 0x85, 0x53)
 
 prs = Presentation()
-prs.slide_width = Inches(13.333)   # 16:9
+prs.slide_width = Inches(13.333)
 prs.slide_height = Inches(7.5)
 
-# Функция установки фона слайда
-def set_background(slide, color):
-    background = slide.background
-    fill = background.fill
+# === Вспомогательные функции ===
+def set_bg(slide, color):
+    fill = slide.background.fill
     fill.solid()
     fill.fore_color.rgb = color
 
-# Функция добавления декоративной полосы сверху
-def add_top_bar(slide, color, height=Inches(0.08)):
-    """Тонкая цветная полоса в верхней части слайда"""
-    left = Inches(0)
-    top = Inches(0)
-    width = prs.slide_width
-    shape = slide.shapes.add_shape(
-        1, left, top, width, height   # 1 = MSO_SHAPE.RECTANGLE
-    )
+def add_shape(slide, x, y, w, h, fill_color, line_color=None):
+    shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, w, h)
     shape.fill.solid()
-    shape.fill.fore_color.rgb = color
-    shape.line.fill.background()
+    shape.fill.fore_color.rgb = fill_color
+    if line_color:
+        shape.line.color.rgb = line_color
+        shape.line.width = Pt(1)
+    else:
+        shape.line.fill.background()
+    return shape
 
-# Функция создания контентного слайда с иконками
-def add_content_slide(title_text, items, title_icon=""):
-    slide = prs.slides.add_slide(prs.slide_layouts[6])  # Пустой макет
-    set_background(slide, LIGHT_BG)
-    add_top_bar(slide, ACCENT_BLUE)
-
-    # Заголовок
-    left = Inches(0.8)
-    top = Inches(0.5)
-    width = Inches(11.5)
-    height = Inches(1.0)
-    txBox = slide.shapes.add_textbox(left, top, width, height)
-    tf = txBox.text_frame
+def add_text_to_shape(shape, text, font_size, bold=False, align=PP_ALIGN.LEFT, color=COLOR_GRAY_TEXT, margin=0.1):
+    tf = shape.text_frame
     tf.word_wrap = True
+    tf.margin_left = Inches(margin)
+    tf.margin_right = Inches(margin)
+    tf.margin_top = Inches(margin)
+    tf.margin_bottom = Inches(margin)
     p = tf.paragraphs[0]
-    p.text = f"{title_icon}  {title_text}" if title_icon else title_text
-    p.font.size = Pt(30)
+    p.text = text
+    p.font.size = Pt(font_size)
+    p.font.bold = bold
+    p.font.color.rgb = color
+    p.alignment = align
+    return p
+
+# === СЛАЙД 1 (Титульный) ===
+def create_slide_1():
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_bg(slide, COLOR_BG_DARK)
+    
+    title_shape = add_shape(slide, Inches(1.0), Inches(1.5), Inches(12), Inches(2.0), COLOR_BG_DARK)
+    add_text_to_shape(title_shape, "Интеграция сервисов Mail в VK", 52, bold=True, color=COLOR_WHITE, margin=0.4)
+    sub_shape = add_shape(slide, Inches(1.0), Inches(3.2), Inches(12), Inches(1.0), COLOR_BG_DARK)
+    add_text_to_shape(sub_shape, "Потенциал аудитории, финансовая модель и MVP внедрения", 24, bold=False, color=RGBColor(0xCC, 0xDD, 0xEE), margin=0.4)
+
+    circle_outer = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(10.5), Inches(0.5), Inches(2.5), Inches(2.5))
+    circle_outer.fill.solid()
+    circle_outer.fill.fore_color.rgb = RGBColor(0x1D, 0x37, 0x5A)
+    circle_outer.line.fill.background()
+    circle_inner = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(11.0), Inches(1.0), Inches(1.5), Inches(1.5))
+    circle_inner.fill.solid()
+    circle_inner.fill.fore_color.rgb = COLOR_ACCENT_BLUE
+    circle_inner.line.fill.background()
+    vk_text = slide.shapes.add_textbox(Inches(11.3), Inches(1.1), Inches(1.5), Inches(1.5))
+    p = vk_text.text_frame.paragraphs[0]
+    p.text = "VK"
+    p.font.size = Pt(48)
     p.font.bold = True
-    p.font.color.rgb = DARK_BLUE
+    p.font.color.rgb = COLOR_WHITE
 
-    # Контент (список)
-    left = Inches(1.0)
-    top = Inches(1.7)
-    width = Inches(11.2)
-    height = Inches(5.0)
-    txBox = slide.shapes.add_textbox(left, top, width, height)
-    tf = txBox.text_frame
-    tf.word_wrap = True
-    for i, item in enumerate(items):
-        if i == 0:
-            p = tf.paragraphs[0]
-        else:
-            p = tf.add_paragraph()
-        # Каждый пункт начинается с иконки, если не указано своё начало
-        if not item.startswith("📌") and not item.startswith("🔹") and not item.startswith("✔") and not item.startswith("👉") and not item.startswith(">>"):
-            # Добавляем маркер-буллит
-            p.text = f"●  {item}"
-        else:
-            p.text = item
-        p.space_after = Pt(10)
-        p.font.size = Pt(18)
-        p.font.color.rgb = DARK_GRAY
-        # Подпункты выделяем отступом и меньшим шрифтом
-        if item.startswith("   "):
-            p.level = 1
-            p.font.size = Pt(16)
-    return slide
+# === СЛАЙД 2 (Контекст) ===
+def create_slide_2():
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_bg(slide, COLOR_BG_LIGHT)
+    header = add_shape(slide, Inches(0.8), Inches(2.0), Inches(12), Inches(3.85), COLOR_BG_LIGHT) 
+    add_text_to_shape(header, "01 Контекст: Борьба за 'Липкость'", 40, bold=True, color=COLOR_TITLE_TEXT)
+    ns_block = add_shape(slide, Inches(0.8), Inches(1.0), Inches(11.5), Inches(0.8), COLOR_ACCENT_BLUE)
+    add_text_to_shape(ns_block, "NORTH STAR  •  DAU / MAU — Stickiness (Доля ежедневных пользователей)", 16, bold=True, color=COLOR_WHITE)
+    cards = [
+        {'title': '🎯 Цель', 'text': 'Выявить ключевые барьеры, мешающие возвращаться в VK и взаимодействовать с контентом.'},
+        {'title': '📉 Важность', 'text': 'Снижение DAU/MAU = падение рекламной выручки (меньше показов).'},
+        {'title': '⚔️ Конкуренты', 'text': 'Удержание падает на фоне Telegram и YouTube. Их DAU/MAU растут.'}
+    ]
+    for i, card_data in enumerate(cards):
+        x = Inches(0.8) + (i * (Inches(3.7) + Inches(0.2)))
+        y = Inches(2.8)
+        card = add_shape(slide, x, y, Inches(3.7), Inches(3.0), COLOR_WHITE, COLOR_WHITE)
+        title_box = add_shape(slide, x, y, Inches(3.7), Inches(0.6), COLOR_WHITE)
+        add_text_to_shape(title_box, card_data['title'], 16, bold=True, color=COLOR_TITLE_TEXT)
+        desc_box = add_shape(slide, x, Inches(3.4), Inches(3.7), Inches(2.4), COLOR_WHITE)
+        add_text_to_shape(desc_box, card_data['text'], 16, color=COLOR_GRAY_TEXT)
 
-# ==================== Титульный слайд ====================
-slide1 = prs.slides.add_slide(prs.slide_layouts[6])
-set_background(slide1, DARK_BLUE)
+# === СЛАЙД 3 (Приоритет продуктов) ===
+def create_slide_3():
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_bg(slide, COLOR_BG_LIGHT)
+    add_text_to_shape(add_shape(slide, Inches(0.8), Inches(0.5), Inches(12), Inches(1.0), COLOR_BG_LIGHT), "02 Приоритетные сервисы Mail", 38, bold=True, color=COLOR_TITLE_TEXT)
+    products = [
+        ("1 место", "Задачи", "Виджет в чате. Создание из сообщения. Привычный паттерн."),
+        ("1 место", "Календарь", "Встречи прямо из переписки. Снижение когнитивной нагрузки."),
+        ("1 место", "Заметки", "Аналог 'Избранного'. 100+ млн пользователей."),
+        ("1 место", "VK Звонки", "Расширение текущих звонков. Без обучения."),
+        ("2 место", "Облако", "Выгодные тарифы (≈10% дешевле) Яндекс/Google."),
+        ("3 место", "Почта", "Сложный функционал, долгая интеграция.")
+    ]
+    for i, (rank, name, desc) in enumerate(products):
+        x = Inches(0.8) if i < 3 else Inches(6.8)
+        y = Inches(1.8) + ((i % 3) * Inches(1.5))
+        card = add_shape(slide, x, y, Inches(5.5), Inches(1.4), COLOR_WHITE, COLOR_WHITE)
+        add_text_to_shape(card, f"{rank} • {name}\n{desc}", 13, bold=False, color=COLOR_GRAY_TEXT)
 
-# Большая декоративная полоса внизу заголовка
-shape = slide1.shapes.add_shape(
-    1, Inches(0), Inches(3.2), prs.slide_width, Inches(0.1)
-)
-shape.fill.solid()
-shape.fill.fore_color.rgb = ACCENT_BLUE
-shape.line.fill.background()
+# === СЛАЙД 4 (Финансовый потенциал) ===
+def create_slide_4():
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_bg(slide, COLOR_BG_LIGHT)
+    add_text_to_shape(add_shape(slide, Inches(0.8), Inches(0.5), Inches(12), Inches(1.0), COLOR_BG_LIGHT), "03 Финансовый потенциал (Годовая выручка)", 38, bold=True, color=COLOR_TITLE_TEXT)
+    
+    data = [
+        ("Задачи", "20%", "21.4 млн", "570 ₽", "12.2 млрд ₽"),
+        ("Календарь", "25%", "26.75 млн", "570 ₽", "15.2 млрд ₽"),
+        ("Заметки", "20%", "21.4 млн", "570 ₽", "12.2 млрд ₽"),
+        ("VK Звонки", "50%", "53.5 млн", "570 ₽", "30.5 млрд ₽"),
+        ("Облако", "30%", "32.1 млн", "570 ₽", "18.3 млрд ₽"),
+    ]
+    
+    y_offset = Inches(1.8)
+    for i, (name, pen, aud, arpu, rev) in enumerate(data):
+        y = y_offset + i * Inches(0.85)
+        card = add_shape(slide, Inches(1.5), y, Inches(10.0), Inches(0.75), COLOR_WHITE, COLOR_WHITE)
+        add_text_to_shape(card, f"{name} | PR: {pen} | Аудитория: {aud} | ARPU: {arpu}/год | Выручка: {rev}", 13, bold=True, color=COLOR_GRAY_TEXT)
+    
+    total = add_shape(slide, Inches(1.5), y_offset + 5 * Inches(0.85), Inches(10.0), Inches(0.8), COLOR_ACCENT_BLUE)
+    add_text_to_shape(total, "ИТОГО: 88.4 млрд руб./год (∑ всех сервисов)", 16, bold=True, color=COLOR_WHITE)
 
-# Заголовок
-txBox = slide1.shapes.add_textbox(Inches(1.5), Inches(1.5), Inches(10.3), Inches(1.8))
-tf = txBox.text_frame
-tf.word_wrap = True
-p = tf.paragraphs[0]
-p.text = "Интеграция сервисов Mail в VK Мессенджер"
-p.font.size = Pt(40)
-p.font.bold = True
-p.font.color.rgb = WHITE
-p.alignment = PP_ALIGN.LEFT
+# === СЛАЙД 5 (Конкуренты) ===
+def create_slide_5():
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_bg(slide, COLOR_BG_LIGHT)
+    add_text_to_shape(add_shape(slide, Inches(0.8), Inches(0.5), Inches(12), Inches(1.0), COLOR_BG_LIGHT), "04 Конкурентный анализ (Россия)", 38, bold=True, color=COLOR_TITLE_TEXT)
+    
+    comps = [
+        ("Базовые чаты", "✓", "✓", "✓", "✓"),
+        ("Видеозвонки", "✓", "✓", "✓", "✓"),
+        ("Сторис", "✓", "✓", "✓", "✓"),
+        ("Приватные каналы", "✓", "✓", "✗", "✗"),
+        ("Кошелек/Переводы", "✓", "✓", "✗", "✗"),
+        ("Избранное", "✓", "✓", "✗", "✓"),
+        ("Вложенные каналы", "✓", "✓", "✗", "✗")
+    ]
+    
+    y = Inches(1.8)
+    for i, (func, m, t, tm, tc) in enumerate(comps):
+        card = add_shape(slide, Inches(0.8), y + i * Inches(0.7), Inches(11.5), Inches(0.6), COLOR_WHITE, COLOR_WHITE)
+        add_text_to_shape(card, f"{func: <35}  |  MAX: {m} |  Telegram: {t} |  TamTam: {tm} |  TenChat: {tc}", 13, bold=False, color=COLOR_GRAY_TEXT)
 
-# Подзаголовок
-txBox2 = slide1.shapes.add_textbox(Inches(1.5), Inches(3.6), Inches(10.3), Inches(1.2))
-tf2 = txBox2.text_frame
-p2 = tf2.paragraphs[0]
-p2.text = "Потенциал аудитории, прогноз выручки и MVP\nАнализ на основе данных VK, март 2026 г."
-p2.font.size = Pt(24)
-p2.font.color.rgb = RGBColor(0xBB, 0xCC, 0xDD)
-p2.alignment = PP_ALIGN.LEFT
+# === СЛАЙД 6 (Гипотезы и метрики) ===
+def create_slide_6():
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_bg(slide, COLOR_BG_LIGHT)
+    add_text_to_shape(add_shape(slide, Inches(0.8), Inches(0.5), Inches(12), Inches(1.0), COLOR_BG_LIGHT), "05 Гипотезы и метрики", 38, bold=True, color=COLOR_TITLE_TEXT)
+    
+    h = [
+        ("🔴 Высокий приоритет", "• Stories → +10% retention, -14% bounce\n• Календарь → +10% scroll depth\n• Заметки → +5% retention\n• Задачи → +20% DAU\n• VK Звонки → +5% retention\nПроверка: A/B тест (2 нед.) на 50%"),
+        ("🟠 Средний приоритет", "• Создание ботов → +10-15% conversion\n• API Integration → +10% retention\nПроверка: Колич. опрос (500+) + анализ запросов."),
+        ("🟢 Низкий приоритет", "• Приватные каналы → +8% retention, +12% DAU\n• Кошелек → +5% retention, +9% DAU\nПроверка: Глубинные интервью (10-15 продавцов)")
+    ]
+    for i, (priority, text) in enumerate(h):
+        x = Inches(0.8) + i * (Inches(3.8) + Inches(0.2))
+        y = Inches(1.8)
+        grp = add_shape(slide, x, y, Inches(3.8), Inches(5.2), COLOR_WHITE, COLOR_WHITE)
+        add_text_to_shape(grp, f"{priority}\n\n{text}", 13, bold=False, color=COLOR_GRAY_TEXT)
 
-# Иконка презентации (эмодзи)
-txBox3 = slide1.shapes.add_textbox(Inches(11.5), Inches(0.3), Inches(1.5), Inches(1.0))
-tf3 = txBox3.text_frame
-p3 = tf3.paragraphs[0]
-p3.text = "📊"
-p3.font.size = Pt(36)
+# === СЛАЙД 7 (MVP и Discovery) ===
+def create_slide_7():
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_bg(slide, COLOR_BG_LIGHT)
+    add_text_to_shape(add_shape(slide, Inches(0.8), Inches(0.5), Inches(12), Inches(1.0), COLOR_BG_LIGHT), "06 MVP + Discovery", 38, bold=True, color=COLOR_TITLE_TEXT)
+    
+    col1 = add_shape(slide, Inches(0.8), Inches(2.0), Inches(5.5), Inches(4.5), COLOR_WHITE, COLOR_WHITE)
+    add_text_to_shape(col1, "🔬 Discovery до этапа разработки:\n\n• Custdev (10-15 польз.)\n• Опрос внутри приложения (1000+)\n• Анализ точек выхода (Яндекс.Метрика)", 16, bold=True, color=COLOR_GRAY_TEXT)
+    
+    col2 = add_shape(slide, Inches(7.0), Inches(2.0), Inches(5.5), Inches(4.5), COLOR_WHITE, COLOR_WHITE)
+    add_text_to_shape(col2, "🚀 MVP: Заметки + Задачи как единый виджет в чате\n\nПочему: \n• Мин. сложность разработки\n• Закрывает боль 'закрепленных сообщений'\n• Быстрый эффект на retention\n\nФункционал: \n• Создание из сообщения\n• Дедлайн + напоминание\n• Вкладка 'Все задачи'\n• Шеринг в чате", 16, bold=True, color=COLOR_GRAY_TEXT)
 
-# ==================== Слайд 2. Приоритезация сервисов ====================
-add_content_slide(
-    "Какие сервисы Mail запускаем первыми",
-    [
-        "📌 6 продуктов: Почта, Облако, Задачи, Календарь, Заметки, VK Звонки",
-        "",
-        "✔ Первый эшелон (минимальный порог входа):",
-        "   ● Задачи — виджет в чате, создание из сообщения",
-        "   ● Календарь — встречи прямо из переписки",
-        "   ● Заметки — аналог «Избранного» Telegram",
-        "   ● VK Звонки — расширение текущих звонков",
-        "",
-        "✔ Второй эшелон: Облако (выгодные тарифы, но сложнее)",
-        "✔ Третий эшелон: Почта (громоздкий функционал)",
-        "",
-        ">> Почему: привычные паттерны, быстрое влияние на retention и DAU"
-    ],
-    title_icon="🚀"
-)
+# === СЛАЙД 8 (Дорожная карта) ===
+def create_slide_8():
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_bg(slide, COLOR_BG_LIGHT)
+    add_text_to_shape(add_shape(slide, Inches(0.8), Inches(0.5), Inches(12), Inches(1.0), COLOR_BG_LIGHT), "07 Дорожная карта внедрения", 38, bold=True, color=COLOR_TITLE_TEXT)
+    
+    waves = [
+        ("Wave 1 (0-3 мес.)", "MVP", "Заметки + Задачи (виджет в чате)", COLOR_ACCENT_BLUE),
+        ("Wave 2 (3-6 мес.)", "Расширение", "Календарь + VK Звонки", COLOR_ORANGE),
+        ("Wave 3 (6-12 мес.)", "Масштабирование", "Облако + Почта (фоново)", RGBColor(0x3A, 0x85, 0x53))
+    ]
+    
+    y = Inches(2.0)
+    for i, (wave, stage, description, color) in enumerate(waves):
+        # Полоса этапа
+        bar = add_shape(slide, Inches(2.0), y + i * Inches(1.5), Inches(9.0), Inches(0.8), color)
+        add_text_to_shape(bar, f"{wave}  •  {stage}\n{description}", 16, bold=True, color=COLOR_WHITE)
+        
+        # Стрелка между этапами
+        if i < 2:
+            arrow = add_shape(slide, Inches(6.0), y + i * Inches(1.5) + Inches(0.8), Inches(1.0), Inches(0.2), COLOR_ACCENT_BLUE) # Упрощенная стрелка
 
-# ==================== Слайд 3. Аудитория и выручка ====================
-add_content_slide(
-    "Потенциальная аудитория и годовая выручка",
-    [
-        "📊 Исходные данные: MAU VK MAX = 107 млн, ARPU ≈ 570 ₽/год",
-        "",
-        "🔹 Задачи      (20%): 21,4 млн чел. → 12,2 млрд ₽",
-        "🔹 Календарь   (25%): 26,75 млн чел. → 15,2 млрд ₽",
-        "🔹 Заметки     (20%): 21,4 млн чел. → 12,2 млрд ₽",
-        "🔹 VK Звонки   (50%): 53,5 млн чел. → 30,5 млрд ₽",
-        "🔹 Облако      (30%): 32,1 млн чел. → 18,3 млрд ₽",
-        "",
-        "💰 Суммарный потенциал – более 88 млрд ₽/год",
-        ">> Первыми внедряем Задачи + Заметки (быстрый эффект, низкая сложность)"
-    ],
-    title_icon="📈"
-)
+# === СЛАЙД 9 (Риски и зависимости) ===
+def create_slide_9():
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_bg(slide, COLOR_BG_LIGHT)
+    add_text_to_shape(add_shape(slide, Inches(0.8), Inches(0.5), Inches(12), Inches(1.0), COLOR_BG_LIGHT), "08 Риски и зависимости", 38, bold=True, color=COLOR_TITLE_TEXT)
+    
+    risks = [
+        ("🔴 Технические", "• Сложность интеграции Почты\n• Зависимость от API VK Мессенджер\n• Качество связи при звонках"),
+        ("🟠 Рыночные", "• Высокая активность Telegram\n• Уход пользователей при технических сбоях\n• Низкий Penetration Rate у Облака"),
+        ("🟢 Организационные", "• Недостаток ресурсов разработки\n• Рассинхрон с командой VK MAX\n• Приоритеты других продуктов VK")
+    ]
+    
+    for i, (category, text) in enumerate(risks):
+        x = Inches(0.8) + i * (Inches(3.8) + Inches(0.2))
+        y = Inches(2.0)
+        card = add_shape(slide, x, y, Inches(3.8), Inches(4.0), COLOR_WHITE, COLOR_WHITE)
+        add_text_to_shape(card, f"{category}\n\n{text}", 14, bold=False, color=COLOR_GRAY_TEXT)
 
-# ==================== Слайд 4. Конкуренты ====================
-add_content_slide(
-    "Конкурентный ландшафт (Россия)",
-    [
-        "🔍 Ключевые конкуренты: Telegram, ТамТам, TenChat",
-        "",
-        "✅ Базовые функции (чаты, звонки, боты, группы) – у всех",
-        "✅ Кошелёк / переводы – у MAX и Telegram (остальные ❌)",
-        "✅ Избранное (заметки) – у MAX, Telegram, TenChat",
-        "✅ Вложенные каналы – только у MAX и Telegram",
-        "",
-        "💎 Уникальное преимущество MAX:",
-        "   ● Интеграция Задач, Календаря, Облака прямо в мессенджер",
-        "   ● Ни у кого из конкурентов такого нет"
-    ],
-    title_icon="🔎"
-)
+# === СЛАЙД 10 (Итоги и следующий шаг) ===
+def create_slide_10():
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+    set_bg(slide, COLOR_BG_DARK)
+    
+    summary = add_shape(slide, Inches(0.8), Inches(2.0), Inches(11.5), Inches(3.5), COLOR_BG_DARK)
+    add_text_to_shape(summary, "09 Итоги и следующий шаг", 40, bold=True, color=COLOR_WHITE)
+    
+    lines = [
+        "💰 Потенциальная выручка от внедрения 5 сервисов > 88 млрд руб./год",
+        "🚀 MVP: Заметки + Задачи (закрывает боль 'закрепленных сообщений')",
+        "📈 Дорожная карта на 12 месяцев: от MVP к масштабированию",
+        "⚠️ Ключевой риск: конкуренция с Telegram и техническая сложность интеграции",
+        "✅ Решение: запустить A/B тест и Custdev в ближайшие 2 недели"
+    ]
+    
+    y = Inches(3.0)
+    for line in lines:
+        card = add_shape(slide, Inches(1.5), y, Inches(10.0), Inches(0.6), COLOR_WHITE, COLOR_WHITE)
+        add_text_to_shape(card, line, 18, bold=True, color=COLOR_GRAY_TEXT)
+        y += Inches(0.8)
+    
+    action = add_shape(slide, Inches(1.5), y + Inches(0.5), Inches(10.0), Inches(0.8), COLOR_ACCENT_BLUE)
+    add_text_to_shape(action, "👉 Рекомендация: Немедленный старт MVP (Заметки+Задачи), запуск A/B теста на 50%", 16, bold=True, color=COLOR_WHITE)
 
-# ==================== Слайд 5. Гипотезы ====================
-add_content_slide(
-    "Ключевые гипотезы роста и методы проверки",
-    [
-        "🚀 Высокий приоритет:",
-        "   ● Заметки + Задачи → +5% retention, +20% DAU",
-        "   ● Календарь → +10 пунктов scroll depth",
-        "   ● VK Звонки → +5% ежедневный retention",
-        "   ● A/B-тест 2 недели (50/50%)",
-        "",
-        "🔬 Discovery до разработки:",
-        "   ● 10–15 кастдев-интервью",
-        "   ● Опрос 1000+ активных пользователей",
-        "   ● Аналитика точек выхода",
-        "",
-        "💡 Дополнительно: упрощение API и ботов, приватные каналы, кошелёк"
-    ],
-    title_icon="💡"
-)
+# === Сборка всех слайдов ===
+create_slide_1()
+create_slide_2()
+create_slide_3()
+create_slide_4()
+create_slide_5()
+create_slide_6()
+create_slide_7()
+create_slide_8()
+create_slide_9()
+create_slide_10()
 
-# ==================== Слайд 6. MVP ====================
-add_content_slide(
-    "MVP: Заметки + Задачи как единый виджет",
-    [
-        "🎯 Первый релиз — виджет внутри чата:",
-        "   ● Создание заметки/задачи из сообщения (одна кнопка)",
-        "   ● Дедлайн и напоминание",
-        "   ● Вкладка «Все задачи»",
-        "   ● Шеринг задачи в чате",
-        "",
-        "⚡ Почему они:",
-        "   ● Минимальная сложность разработки, без доп. авторизации",
-        "   ● Закрывают главную боль: закреплённые сообщения вместо заметок",
-        "   ● Быстрый измеряемый эффект на retention",
-        "",
-        "👉 После проверки гипотез → Календарь и VK Звонки"
-    ],
-    title_icon="🎯"
-)
-
-# Сохранение
-prs.save("Интеграция_Mail_в_VK.pptx")
-print("✅ Готова стильная презентация: Интеграция_Mail_в_VK.pptx")
+prs.save("VK_Mail_Case_10_Slides.pptx")
+print("✅ Презентация создана: VK_Mail_Case_10_Slides.pptx")
