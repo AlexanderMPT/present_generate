@@ -4,7 +4,10 @@ on:
   push:
     paths:
       - 'create_presentation.py'
-  workflow_dispatch:   # даёт кнопку ручного запуска в Actions
+  workflow_dispatch:
+
+permissions:
+  contents: write   # 👈 разрешаем GitHub Actions записывать файлы в репозиторий
 
 jobs:
   build:
@@ -12,10 +15,8 @@ jobs:
     steps:
       - name: Скачать репозиторий
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Установить Python и библиотеку
+      - name: Установить Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -23,13 +24,13 @@ jobs:
       - name: Установить python-pptx
         run: pip install python-pptx
 
-      - name: Запустить генерацию презентации
+      - name: Сгенерировать PPTX
         run: python create_presentation.py
 
-      - name: Закоммитить и запушть PPTX обратно в репозиторий
+      - name: Закоммитить и отправить PPTX
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Интеграция_Mail_в_VK.pptx
           git commit -m "Авто-генерация презентации" || echo "Нет изменений"
           git push
