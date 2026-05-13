@@ -1,1 +1,1 @@
-# present_generate
+# генерация_презентации_через_Python
